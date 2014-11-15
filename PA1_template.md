@@ -4,19 +4,6 @@
 
 
 ```r
-library(zoo)
-```
-
-```
-## 
-## Attaching package: 'zoo'
-## 
-## The following objects are masked from 'package:base':
-## 
-##     as.Date, as.Date.numeric
-```
-
-```r
 library(data.table)
 library(dplyr)
 ```
@@ -52,12 +39,20 @@ library(lubridate)
 ```
 
 ```r
-library(ggplot2)
-library(knitr)
+library(zoo)
 ```
 
 ```
-## Warning: package 'knitr' was built under R version 3.1.2
+## 
+## Attaching package: 'zoo'
+## 
+## The following objects are masked from 'package:base':
+## 
+##     as.Date, as.Date.numeric
+```
+
+```r
+library(ggplot2)
 ```
 
 ## Loading and preprocessing the data
@@ -216,7 +211,7 @@ Apparently imputing values introduces a small difference of the data characteris
 
 
 ```r
-imputingSummary <- data.frame(
+data.frame(
     Original=c(round(meanDailySteps),medianDailySteps),
     Imputed=c(round(meanDailyStepsImputed),medianDailyStepsImputed),
     Difference=c(
@@ -225,13 +220,13 @@ imputingSummary <- data.frame(
         ),
     row.names=c("Mean","Median")
     )
-kable(imputingSummary)
 ```
 
-          Original   Imputed  Difference 
--------  ---------  --------  -----------
-Mean          9354      9510  1.67%      
-Median       10395     10417  0.21%      
+```
+##        Original Imputed Difference
+## Mean       9354    9510      1.67%
+## Median    10395   10417      0.21%
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?

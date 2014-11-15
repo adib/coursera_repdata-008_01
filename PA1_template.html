@@ -57,13 +57,6 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 
 <div id="imports" class="section level2">
 <h2>Imports</h2>
-<pre class="r"><code>library(zoo)</code></pre>
-<pre><code>## 
-## Attaching package: 'zoo'
-## 
-## The following objects are masked from 'package:base':
-## 
-##     as.Date, as.Date.numeric</code></pre>
 <pre class="r"><code>library(data.table)
 library(dplyr)</code></pre>
 <pre><code>## 
@@ -87,9 +80,14 @@ library(dplyr)</code></pre>
 ## The following objects are masked from 'package:data.table':
 ## 
 ##     hour, mday, month, quarter, wday, week, yday, year</code></pre>
-<pre class="r"><code>library(ggplot2)
-library(knitr)</code></pre>
-<pre><code>## Warning: package 'knitr' was built under R version 3.1.2</code></pre>
+<pre class="r"><code>library(zoo)</code></pre>
+<pre><code>## 
+## Attaching package: 'zoo'
+## 
+## The following objects are masked from 'package:base':
+## 
+##     as.Date, as.Date.numeric</code></pre>
+<pre class="r"><code>library(ggplot2)</code></pre>
 </div>
 <div id="loading-and-preprocessing-the-data" class="section level2">
 <h2>Loading and preprocessing the data</h2>
@@ -170,7 +168,7 @@ round(meanDailyStepsImputed)</code></pre>
 medianDailyStepsImputed</code></pre>
 <pre><code>## [1] 10417</code></pre>
 <p>Apparently imputing values introduces a small difference of the data characteristics, but the difference is not significant (about one percent).</p>
-<pre class="r"><code>imputingSummary &lt;- data.frame(
+<pre class="r"><code>data.frame(
     Original=c(round(meanDailySteps),medianDailySteps),
     Imputed=c(round(meanDailyStepsImputed),medianDailyStepsImputed),
     Difference=c(
@@ -178,32 +176,10 @@ medianDailyStepsImputed</code></pre>
         sprintf(&quot;%0.2f%%&quot;,abs(medianDailyStepsImputed-medianDailySteps)/medianDailySteps*100)
         ),
     row.names=c(&quot;Mean&quot;,&quot;Median&quot;)
-    )
-kable(imputingSummary)</code></pre>
-<table>
-<thead>
-<tr class="header">
-<th align="left"></th>
-<th align="right">Original</th>
-<th align="right">Imputed</th>
-<th align="left">Difference</th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">Mean</td>
-<td align="right">9354</td>
-<td align="right">9510</td>
-<td align="left">1.67%</td>
-</tr>
-<tr class="even">
-<td align="left">Median</td>
-<td align="right">10395</td>
-<td align="right">10417</td>
-<td align="left">0.21%</td>
-</tr>
-</tbody>
-</table>
+    )</code></pre>
+<pre><code>##        Original Imputed Difference
+## Mean       9354    9510      1.67%
+## Median    10395   10417      0.21%</code></pre>
 </div>
 <div id="are-there-differences-in-activity-patterns-between-weekdays-and-weekends" class="section level2">
 <h2>Are there differences in activity patterns between weekdays and weekends?</h2>

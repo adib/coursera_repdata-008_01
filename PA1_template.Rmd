@@ -8,12 +8,11 @@ output:
 ## Imports
 
 ```{r}
-library(zoo)
 library(data.table)
 library(dplyr)
 library(lubridate)
+library(zoo)
 library(ggplot2)
-library(knitr)
 ```
 
 ## Loading and preprocessing the data
@@ -128,7 +127,7 @@ medianDailyStepsImputed
 Apparently imputing values introduces a small difference of the data characteristics, but the difference is not significant (about one percent).
 
 ```{r}
-imputingSummary <- data.frame(
+data.frame(
     Original=c(round(meanDailySteps),medianDailySteps),
     Imputed=c(round(meanDailyStepsImputed),medianDailyStepsImputed),
     Difference=c(
@@ -137,7 +136,6 @@ imputingSummary <- data.frame(
         ),
     row.names=c("Mean","Median")
     )
-kable(imputingSummary)
 ```
 
 
