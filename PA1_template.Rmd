@@ -32,7 +32,11 @@ decodeTimeIdentifier <- function(timeIdentifier) {
     hrs + mnts / 60
 }
 stepsData <- fread("activity.csv")    
-stepsData <- mutate(stepsData,date = ymd(date), hour = decodeTimeIdentifier(interval),timestamp = date + hour * 3600)
+stepsData <- mutate(stepsData,
+                    date = ymd(date), 
+                    hour = decodeTimeIdentifier(interval),
+                    timeStamp = date + hour * 3600
+                    )  %>% setkey(timeStamp)
 ```
 
 
@@ -55,21 +59,35 @@ round(meanDailySteps)
 The following is the median total number of steps taken per day:
 
 ```{r}
-medianDailySteps<-median(dailySteps$steps)
+medianDailySteps <- median(dailySteps$steps)
+medianDailySteps
 ```
 
 
 ## What is the average daily activity pattern?
 
+The following plot shows the average activities per five-minute intervals of all days in the data set.
+
 ```{r}
 activityPattern <- stepsData %>% group_by(hour) %>% summarize(steps = mean(steps,na.rm=TRUE))
-plot(activityPattern$hour,activityPattern$steps,type="l",xlab="The hour of the day",ylab="Steps",main="Daily Activity Pattern")
+ggplot(activityPattern) + 
+    aes(hour,steps) + 
+    geom_line() +
+    scale_x_continuous(breaks=seq(0,24,4),minor_breaks=0:24) +
+    coord_cartesian(xlim=c(0,24)) +
+    ylab("Average Number of Steps") + xlab("Hour of the Day") + 
+    ggtitle("Daily Activity Pattern") 
 ```
 
-The 5-minute intervals with the most average number of steps is:
+The five-minute interval with the most average number of steps is:
 
 ```{r}
-activityPattern %>% filter(steps == max(steps))
+mostSteps <- activityPattern %>% filter(steps == max(steps)) %>% 
+    mutate(Steps = round(steps),
+           Time=sprintf("%02d:%02d",as.integer(hour),as.integer(abs(hour-as.integer(hour))*60))
+           ) %>% 
+    select(Time,Steps)
+t(mostSteps)
 ```
 
 ## Imputing missing values
@@ -80,18 +98,17 @@ The number of records with missing values are:
 stepsData %>% filter(is.na(steps)) %>% nrow()
 ```
 
-We'll use the *carry-forward* method of filling missing values. The 5-minute interval with an `NA` steps will use the `steps` value of the interval that came before it. Furthermore we'll remove the first day reading of the data set since that entire day consists of all `NA` values and we assume that data collection hasn't been started from that day.
+We'll use the *carry-forward* method of filling missing values. The five-minute interval with `NA` steps value will use the value of the interval that came before it. Furthermore we'll remove the first day reading of the data set since that entire day consists of all `NA` values and we assume that data collection hasn't yet started that day.
 
 ```{r}
-stepsDataImputed <- filter(stepsData,date != ymd("2012-10-01")) %>% mutate(steps=na.locf(steps))
+stepsDataImputed <- filter(stepsData,date != ymd("2012-10-01"))  %>% mutate(steps = na.locf(steps))
 ```
 
-
-A histogram of total steps every day
+A histogram of total steps every day after imputing data:
 
 ```{r}
 dailyStepsImputed <- stepsDataImputed %>% group_by(date) %>% summarize(steps = sum(steps,na.rm=TRUE))
-hist(dailyStepsImputed$steps,main="Daily Steps",xlab="Total steps every day (imputed)")
+hist(dailyStepsImputed$steps,main="Daily Steps (imputed)",xlab="Total steps every day")
 ```
 
 The following is the mean total number of steps taken per day from the imputed data:
@@ -105,6 +122,7 @@ The following is the median total number of steps taken per day from the imputed
 
 ```{r}
 medianDailyStepsImputed <- median(dailyStepsImputed$steps)
+medianDailyStepsImputed
 ```
 
 Apparently imputing values introduces a small difference of the data characteristics, but the difference is not significant (about one percent).
@@ -126,12 +144,13 @@ kable(imputingSummary)
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ```{r}
-activityPatternByDayType <- stepsData %>% 
+activityPatternByDayType <- stepsDataImputed %>% 
     mutate(dayType=ifelse(weekdays(date) %in% c("Saturday","Sunday"),"Weekend","Weekday")) %>% 
     group_by(dayType,hour) %>% summarize(steps = mean(steps,na.rm=TRUE))
 ggplot(activityPatternByDayType) + 
     aes(hour,steps) + 
     geom_line() +
+    scale_x_continuous(breaks=seq(0,24,4),minor_breaks=0:24) +
     coord_cartesian(xlim=c(0,24)) +
     ylab("Average Number of Steps") + xlab("Hour of the Day") + 
     ggtitle("Weekday vs Weekend Activity Pattern") +
