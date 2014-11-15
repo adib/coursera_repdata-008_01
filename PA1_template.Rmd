@@ -5,21 +5,137 @@ output:
     keep_md: true
 ---
 
+## Imports
+
+```{r}
+library(zoo)
+library(data.table)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(knitr)
+```
 
 ## Loading and preprocessing the data
 
+```{r}
+if(!file.exists("activity.csv")) {
+    if(file.exists("activity.zip")) {
+        unzip("activity.zip")
+    } else {
+        stop("Cannot find data file")
+    }
+}
+decodeTimeIdentifier <- function(timeIdentifier) {
+    mnts <- timeIdentifier %% 100
+    hrs <- (timeIdentifier - mnts) / 100
+    hrs + mnts / 60
+}
+stepsData <- fread("activity.csv")    
+stepsData <- mutate(stepsData,date = ymd(date), hour = decodeTimeIdentifier(interval),timestamp = date + hour * 3600)
+```
 
 
 ## What is mean total number of steps taken per day?
 
+A histogram of the total number of steps per day is as follows:
+
+```{r}
+dailySteps <- stepsData %>% group_by(date) %>% summarize(steps = sum(steps,na.rm=TRUE))
+hist(dailySteps$steps,main="Daily Steps",xlab="Total steps every day")
+```
+
+The following is the mean total number of steps taken per day:
+
+```{r}
+meanDailySteps <- mean(dailySteps$steps)
+round(meanDailySteps)
+```
+
+The following is the median total number of steps taken per day:
+
+```{r}
+medianDailySteps<-median(dailySteps$steps)
+```
 
 
 ## What is the average daily activity pattern?
 
+```{r}
+activityPattern <- stepsData %>% group_by(hour) %>% summarize(steps = mean(steps,na.rm=TRUE))
+plot(activityPattern$hour,activityPattern$steps,type="l",xlab="The hour of the day",ylab="Steps",main="Daily Activity Pattern")
+```
 
+The 5-minute intervals with the most average number of steps is:
+
+```{r}
+activityPattern %>% filter(steps == max(steps))
+```
 
 ## Imputing missing values
 
+The number of records with missing values are:
+
+```{r}
+stepsData %>% filter(is.na(steps)) %>% nrow()
+```
+
+We'll use the *carry-forward* method of filling missing values. The 5-minute interval with an `NA` steps will use the `steps` value of the interval that came before it. Furthermore we'll remove the first day reading of the data set since that entire day consists of all `NA` values and we assume that data collection hasn't been started from that day.
+
+```{r}
+stepsDataImputed <- filter(stepsData,date != ymd("2012-10-01")) %>% mutate(steps=na.locf(steps))
+```
+
+
+A histogram of total steps every day
+
+```{r}
+dailyStepsImputed <- stepsDataImputed %>% group_by(date) %>% summarize(steps = sum(steps,na.rm=TRUE))
+hist(dailyStepsImputed$steps,main="Daily Steps",xlab="Total steps every day (imputed)")
+```
+
+The following is the mean total number of steps taken per day from the imputed data:
+
+```{r}
+meanDailyStepsImputed <- mean(dailyStepsImputed$steps)
+round(meanDailyStepsImputed)
+```
+
+The following is the median total number of steps taken per day from the imputed data:
+
+```{r}
+medianDailyStepsImputed <- median(dailyStepsImputed$steps)
+```
+
+Apparently imputing values introduces a small difference of the data characteristics, but the difference is not significant (about one percent).
+
+```{r}
+imputingSummary <- data.frame(
+    Original=c(round(meanDailySteps),medianDailySteps),
+    Imputed=c(round(meanDailyStepsImputed),medianDailyStepsImputed),
+    Difference=c(
+        sprintf("%0.2f%%",abs(meanDailyStepsImputed-meanDailySteps)/meanDailySteps*100),
+        sprintf("%0.2f%%",abs(medianDailyStepsImputed-medianDailySteps)/medianDailySteps*100)
+        ),
+    row.names=c("Mean","Median")
+    )
+kable(imputingSummary)
+```
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+activityPatternByDayType <- stepsData %>% 
+    mutate(dayType=ifelse(weekdays(date) %in% c("Saturday","Sunday"),"Weekend","Weekday")) %>% 
+    group_by(dayType,hour) %>% summarize(steps = mean(steps,na.rm=TRUE))
+ggplot(activityPatternByDayType) + 
+    aes(hour,steps) + 
+    geom_line() +
+    coord_cartesian(xlim=c(0,24)) +
+    ylab("Average Number of Steps") + xlab("Hour of the Day") + 
+    ggtitle("Weekday vs Weekend Activity Pattern") +
+    facet_grid(dayType ~ .)
+    
+```
+
